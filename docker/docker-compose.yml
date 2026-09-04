@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  sovereign-rag:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: sovereign_rag_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - SOVEREIGN_MODE=true
+      - QDRANT_STORAGE_PATH=/app/data/qdrant
+      - DATABASE_URL=sqlite:////app/data/metadata.db
+      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+      - RERANKER_MODEL_NAME=cross-encoder/ms-marco-MiniLM-L-6-v2
+    volumes:
+      - rag_data:/app/data
+      - rag_logs:/app/logs
+    # Network isolation: can be isolated from the default bridge to guarantee zero WAN egress
+    networks:
+      - sovereign_isolated_net
+
+volumes:
+  rag_data:
+  rag_logs:
+
+networks:
+  sovereign_isolated_net:
+    driver: bridge
+    # internal: true blocks all external WAN access from inside this network
+    internal: false
